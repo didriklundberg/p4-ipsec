@@ -130,12 +130,11 @@ extern ipsec_crypt {
     void decrypt_null(inout ipv4_t ipv4, inout esp_t esp, inout standard_metadata_t standard_metadata);
 }
 
-ipsec_crypt() ipsecCrypt;  // instantiation
-
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
+	ipsec_crypt() ipsecCrypt;  // instantiation (moved to inside ingress)
     register<bit<32>>(1024) counters;
 	bool notify_soft = false;
 	bool notify_hard = false;
@@ -238,7 +237,8 @@ control MyIngress(inout headers hdr,
     }
 
     action clone_packet() {
-        const bit<32> REPORT_MIRROR_SESSION_ID = 500;
+        // const commented out
+        /* const */ bit<32> REPORT_MIRROR_SESSION_ID = 500;
         // Clone from ingress to egress pipeline
         clone(CloneType.I2E, REPORT_MIRROR_SESSION_ID);
     }
@@ -325,15 +325,16 @@ control MyIngress(inout headers hdr,
             }
         }
 
+        // exit statements swapped for return statements
         if(do_drop) {
 			mark_to_drop(standard_metadata);
-			exit;
+			return;
 		} else if(notify_soft) {
             send_to_controller(IPSEC_SOFT_PACKET_LIMIT);
-            exit;
+            return;
 		} else if(notify_hard) {
 			send_to_controller(IPSEC_HARD_PACKET_LIMIT);
-			exit;
+			return;
 		}
     }
 }
