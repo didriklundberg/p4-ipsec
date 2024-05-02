@@ -88,6 +88,10 @@ parser MyParser(packet_in packet,
                 inout standard_metadata_t standard_metadata) {
 
     state start {
+        /* If the user metadata is not initialised, we get issues after getting a drop result when applying the spd table */
+        meta.user_metadata.spd_mark = 0;
+        /* The bypass field doesn't seem to be used, but we initialise is nonetheless */
+        meta.user_metadata.bypass = false;
         transition parse_ethernet;
     }
 
@@ -354,7 +358,7 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 	update_checksum(
 	    hdr.ipv4.isValid(),
             { hdr.ipv4.version,
-	      hdr.ipv4.ihl,
+              hdr.ipv4.ihl,
               hdr.ipv4.diffserv,
               hdr.ipv4.totalLen,
               hdr.ipv4.identification,
